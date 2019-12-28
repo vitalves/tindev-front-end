@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import io from 'socket.io-client';
 import { Link } from 'react-router-dom';
 
 import api from '../services/axios';
@@ -8,9 +9,11 @@ import './Main.css';
 import logo from '../assets/logo.svg';
 import like from '../assets/like.svg';
 import dislike from '../assets/dislike.svg';
+import itsamatch from '../assets/itsamatch.png';
 
 export default function Main({ match }) {
   const [ users, setUsers] = useState([]);
+  const [ matchDev, setMatchDev] = useState(null);
 
   useEffect(() => {
     (async function loadUsers() {
@@ -22,6 +25,38 @@ export default function Main({ match }) {
       setUsers(response.data);
     })();
   }, [match.params.id]);
+
+  /* SOKET.IO */
+  useEffect(() => {
+    const socket = io('http://localhost:3333', {
+      query: {
+        user: match.params.id
+      }
+    });
+
+    // Ouvir o evento de 'match' do socket:
+    socket.on('match', dev => {
+      setMatchDev(dev);
+    });
+
+  }, [match.params.id]);
+
+  /* TESTE SOKET.IO
+  useEffect(() => {
+    const socket = io('http://localhost:3333');
+    // lendo mensagem do backend
+    socket.on('world', message => {
+      console.log(message)
+    });
+    // enviando mensagem para o backend
+    setTimeout(() => {
+      socket.emit('tipo', {
+        message: 'hello World',
+      })
+    }, 3000);
+  }, [match.params.id]);
+  */
+  /* SOKET.IO */
 
   async function handleLike(id) {
     await api.post(`devs/${id}/likes`, null, {
@@ -72,6 +107,21 @@ export default function Main({ match }) {
       ) : (
         <div className="empty">ACABOU <br /> =( </div>
       )}
+
+      {
+        matchDev && (
+          <div className="match-container">
+            <img src={itsamatch} alt="it's a match"/>
+            <img 
+              className="avatar" 
+              src={matchDev.avatar} alt="avatar"
+            />
+            <strong>{matchDev.name}</strong>
+            <p>{matchDev.bio}</p>
+            <button type="button" onClick={() => setMatchDev(null)}>Fechar</button>
+          </div>
+        )
+      }
     </div>
   );
 }
